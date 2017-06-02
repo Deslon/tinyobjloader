@@ -98,6 +98,11 @@ namespace tinyobj {
 //         separately
 //         cube_left   | cube_right
 
+class FileReader {
+  public:
+    static std::string (*externalFunc)(const char*);
+};
+
 #ifdef TINYOBJLOADER_USE_DOUBLE
   //#pragma message "using double"
   typedef double real_t;
@@ -361,6 +366,8 @@ void LoadMtl(std::map<std::string, int> *material_map,
 #include <sstream>
 
 namespace tinyobj {
+
+std::string (*FileReader::externalFunc)(const char*);
 
 MaterialReader::~MaterialReader() {}
 
@@ -1357,7 +1364,11 @@ bool MaterialFileReader::operator()(const std::string &matId,
     filepath = matId;
   }
 
+#ifdef TINYOBJLOADER_EXTERNAL_READER_FUNC
+  std::istringstream matIStream(FileReader::externalFunc(filepath.c_str()));
+#else
   std::ifstream matIStream(filepath.c_str());
+#endif
   if (!matIStream) {
     std::stringstream ss;
     ss << "WARN: Material file [ " << filepath << " ] not found." << std::endl;
@@ -1415,7 +1426,11 @@ bool LoadObj(attrib_t *attrib, std::vector<shape_t> *shapes,
 
   std::stringstream errss;
 
+#ifdef TINYOBJLOADER_EXTERNAL_READER_FUNC
+  std::istringstream ifs(FileReader::externalFunc(filename));
+#else
   std::ifstream ifs(filename);
+#endif
   if (!ifs) {
     errss << "Cannot open file [" << filename << "]" << std::endl;
     if (err) {
